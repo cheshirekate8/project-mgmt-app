@@ -11,4 +11,4 @@ const GET_CLIENTS = gql`
   }
 `;
 
-export { GET_CLIENTS }
+export { GET_CLIENTS };

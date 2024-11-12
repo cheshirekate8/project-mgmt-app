@@ -172,7 +172,7 @@ const mutation = new GraphQLObjectType({
               status: args.status,
             },
           },
-          { new: true }
+          { new: true },
         );
       },
     },
