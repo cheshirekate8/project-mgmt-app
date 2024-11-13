@@ -13,16 +13,19 @@ export default function AddProjectModal() {
 
   const [addProject] = useMutation(ADD_PROJECT, {
     variables: {
-      name, description, clientId, status
+      name,
+      description,
+      clientId,
+      status,
     },
-    update(cache, { data: {addProject}}) {
-      const { projects } = cache.readQuery({ query: GET_PROJECTS});
+    update(cache, { data: { addProject } }) {
+      const { projects } = cache.readQuery({ query: GET_PROJECTS });
       cache.writeQuery({
         query: GET_PROJECTS,
-        data: { projects: [...projects, addProject]}
-      })
-    }
-  })
+        data: { projects: [...projects, addProject] },
+      });
+    },
+  });
 
   // Get Clients for select
   const { loading, error, data } = useQuery(GET_CLIENTS);

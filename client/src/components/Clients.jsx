@@ -10,7 +10,7 @@ export default function Clients() {
 
   return (
     <>
-      {!loading && !error && (
+      {!loading && !error && data.clients.length > 0 ? (
         <table className="table table-hover mt-3">
           <thead>
             <tr>
@@ -26,6 +26,8 @@ export default function Clients() {
             ))}
           </tbody>
         </table>
+      ) : (
+        <p>No Clients</p>
       )}
     </>
   );

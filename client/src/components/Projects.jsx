@@ -12,12 +12,14 @@ export default function Projects() {
   return (
     <>
       {data.projects.length > 0 ? (
-      <div className="row mt-5">
-        {data.projects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
-      ) : (<p>No Projects</p>)}
+        <div className="row mt-5">
+          {data.projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      ) : (
+        <p>No Projects</p>
+      )}
     </>
   );
 }
