@@ -1,13 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa";
 import { useMutation } from "@apollo/client";
 import { ADD_CLIENT } from "../mutations/clientMutations";
 import { GET_CLIENTS } from "../queries/clientQueries";
 
+/*
+
+TODO: FIX Regex ESLint error
+
+*/
+
 export default function AddClientModal() {
   const [name, setName] = useState("");
+  const [hasInteractedName, setHasInteractedName] = useState(false);
   const [email, setEmail] = useState("");
+  const [hasInteractedEmail, setHasInteractedEmail] = useState(false);
   const [phone, setPhone] = useState("");
+  const [hasInteractedPhone, setHasInteractedPhone] = useState(false);
+  const [doNotSubmit, setDoNotSumbit] = useState(true);
+  const phoneRegex =
+    /^\+?[1-9]\d{0,2}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   const [addClient] = useMutation(ADD_CLIENT, {
     variables: { name, email, phone },
@@ -21,18 +34,98 @@ export default function AddClientModal() {
     },
   });
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    // console.log(name, email, phone);
+  const nameInput = document.getElementById("name");
+  const phoneInput = document.getElementById("phone");
+  const emailInput = document.getElementById("email");
 
-    if (name === "" || email === "" || phone === "") {
-      return alert("Please fill in all fields");
+  useEffect(() => {
+    //Name Validations
+    if (!hasInteractedName) return;
+    if ((name && name.length < 2) || (hasInteractedName && name === "")) {
+      nameInput?.classList.add("is-invalid");
+      nameInput?.classList.remove("is-valid");
+    } else if (name && name.length >= 2) {
+      nameInput?.classList.add("is-valid");
+      nameInput?.classList.remove("is-invalid");
     }
+  }, [hasInteractedName, name, nameInput, nameInput?.classList]);
 
-    addClient(name, email, phone);
+  useEffect(() => {
+    //Email Validations
+    if (!hasInteractedEmail) return;
+    if (!emailRegex.test(email) && hasInteractedEmail) {
+      emailInput?.classList.add("is-invalid");
+      emailInput?.classList.remove("is-valid");
+    } else if (email && hasInteractedEmail && emailRegex.test(email)) {
+      emailInput?.classList.add("is-valid");
+      emailInput?.classList.remove("is-invalid");
+    }
+  }, [email, emailInput?.classList, emailRegex, hasInteractedEmail]);
+
+  useEffect(() => {
+    //Phone Validations
+    if (!hasInteractedPhone) return;
+    if (
+      !phoneRegex.test(phone) ||
+      (phone.length < 10 && hasInteractedPhone) ||
+      (phone === "" && hasInteractedPhone)
+    ) {
+      phoneInput?.classList.add("is-invalid");
+      phoneInput?.classList.remove("is-valid");
+    } else if (phoneRegex.test(phone) && phone.length >= 10) {
+      phoneInput?.classList.add("is-valid");
+      phoneInput?.classList.remove("is-invalid");
+    }
+  }, [hasInteractedPhone, phone, phoneInput?.classList, phoneRegex]);
+
+  useEffect(() => {
+    if (
+      nameInput?.classList.contains("is-valid") &&
+      emailInput?.classList.contains("is-valid") &&
+      phoneInput?.classList.contains("is-valid")
+    ) {
+      setDoNotSumbit(false);
+    } else {
+      setDoNotSumbit(true);
+    }
+  }, [
+    doNotSubmit,
+    name,
+    email,
+    phone,
+    nameInput?.classList,
+    emailInput?.classList,
+    phoneInput?.classList,
+  ]);
+
+  const clearForm = () => {
     setName("");
     setEmail("");
     setPhone("");
+    setDoNotSumbit(true);
+    setHasInteractedEmail(false);
+    setHasInteractedName(false);
+    setHasInteractedPhone(false);
+    nameInput?.classList.remove("is-valid");
+    nameInput?.classList.remove("is-invalid");
+    emailInput?.classList.remove("is-valid");
+    emailInput?.classList.remove("is-invalid");
+    phoneInput?.classList.remove("is-valid");
+    phoneInput?.classList.remove("is-invalid");
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+
+    if (name === "" || email === "" || phone === "") {
+      return;
+    }
+
+    addClient(name, email, phone);
+    clearForm();
+
+    const closeBtn = document.getElementById("btn-close");
+    closeBtn.click();
   };
 
   return (
@@ -66,6 +159,7 @@ export default function AddClientModal() {
               <button
                 type="button"
                 className="btn-close"
+                id="btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
               ></button>
@@ -76,53 +170,98 @@ export default function AddClientModal() {
                   <label className="form-label">Name</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className={`form-control client-input ${
+                      hasInteractedName && name
+                        ? name.length >= 2
+                          ? "is-valid"
+                          : "is-invalid"
+                        : ""
+                    }`}
                     id="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      if (!hasInteractedName && e.target.value.length >= 2)
+                        setHasInteractedName(true);
+                      setName(e.target.value);
+                    }}
+                    onBlur={() => setHasInteractedName(true)}
+                    required
                   ></input>
+                  <div className="valid-feedback">Looks good!</div>
+                  <div className="invalid-feedback">
+                    Must be greater than 2 characters.
+                  </div>
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
                   <input
                     type="email"
-                    className="form-control"
-                    id="name"
+                    className={`form-control client-input ${
+                      hasInteractedEmail && email
+                        ? emailRegex.test(email)
+                          ? "is-valid"
+                          : "is-invalid"
+                        : ""
+                    }`}
+                    id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      if (!hasInteractedEmail && e.target.value.length >= 8)
+                        setHasInteractedEmail(true);
+                      setEmail(e.target.value);
+                    }}
+                    onBlur={(e) => setHasInteractedEmail(true)}
+                    required
                   ></input>
+                  <div className="valid-feedback">Looks good!</div>
+                  <div className="invalid-feedback">
+                    Must enter valid email.
+                  </div>
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Phone</label>
                   <input
-                    type="text"
-                    className="form-control"
-                    id="name"
+                    type="number"
+                    className={`form-control client-input ${
+                      hasInteractedPhone && phone
+                        ? phoneRegex.test(phone)
+                          ? "is-valid"
+                          : "is-invalid"
+                        : ""
+                    }`}
+                    id="phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      if (!hasInteractedPhone && e.target.value.length >= 10)
+                        setHasInteractedPhone(true);
+                      setPhone(e.target.value);
+                    }}
+                    onBlur={(e) => setHasInteractedPhone(true)}
+                    required
                   ></input>
+                  <div className="valid-feedback">Looks good!</div>
+                  <div className="invalid-feedback">
+                    Must enter valid phone number.
+                  </div>
                 </div>
-                <button
-                  type="submit"
-                  data-bs-dismiss="modal"
-                  className="btn btn-secondary"
-                >
-                  Submit
-                </button>
+                <div className="d-flex justify-content-between">
+                  <button
+                    type="submit"
+                    className="btn btn-secondary mr-5"
+                    disabled={doNotSubmit}
+                  >
+                    Submit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={clearForm}
+                  >
+                    Clear
+                  </button>
+                </div>
               </form>
             </div>
-            {/* <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
-                Close
-              </button>
-              <button type="button" className="btn btn-primary">
-                Save changes
-              </button>
-            </div> */}
           </div>
         </div>
       </div>
