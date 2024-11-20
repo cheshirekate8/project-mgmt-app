@@ -1,14 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FaUser } from "react-icons/fa";
 import { useMutation } from "@apollo/client";
 import { ADD_CLIENT } from "../mutations/clientMutations";
 import { GET_CLIENTS } from "../queries/clientQueries";
-
-/*
-
-TODO: FIX Regex ESLint error
-
-*/
 
 export default function AddClientModal() {
   const [name, setName] = useState("");
@@ -18,9 +12,14 @@ export default function AddClientModal() {
   const [phone, setPhone] = useState("");
   const [hasInteractedPhone, setHasInteractedPhone] = useState(false);
   const [doNotSubmit, setDoNotSumbit] = useState(true);
-  const phoneRegex =
-    /^\+?[1-9]\d{0,2}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const phoneRegex = useMemo(
+    () => /^\+?[1-9]\d{0,2}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/,
+    [],
+  );
+  const emailRegex = useMemo(
+    () => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+    [],
+  );
 
   const [addClient] = useMutation(ADD_CLIENT, {
     variables: { name, email, phone },
@@ -39,46 +38,39 @@ export default function AddClientModal() {
   const emailInput = document.getElementById("email");
 
   useEffect(() => {
-    //Name Validations
     if (!hasInteractedName) return;
-    if ((name && name.length < 2) || (hasInteractedName && name === "")) {
-      nameInput?.classList.add("is-invalid");
-      nameInput?.classList.remove("is-valid");
-    } else if (name && name.length >= 2) {
-      nameInput?.classList.add("is-valid");
-      nameInput?.classList.remove("is-invalid");
-    }
-  }, [hasInteractedName, name, nameInput, nameInput?.classList]);
+
+    const isValid = name && name.length >= 2;
+
+    nameInput?.classList.toggle("is-valid", isValid);
+    nameInput?.classList.toggle("is-invalid", !isValid);
+  }, [hasInteractedName, name, nameInput]);
 
   useEffect(() => {
-    //Email Validations
-    if (!hasInteractedEmail) return;
-    if (!emailRegex.test(email) && hasInteractedEmail) {
-      emailInput?.classList.add("is-invalid");
-      emailInput?.classList.remove("is-valid");
-    } else if (email && hasInteractedEmail && emailRegex.test(email)) {
-      emailInput?.classList.add("is-valid");
-      emailInput?.classList.remove("is-invalid");
-    }
-  }, [email, emailInput?.classList, emailRegex, hasInteractedEmail]);
+    if (!hasInteractedEmail || !emailInput) return;
+
+    const isValidEmail = emailRegex.test(email);
+
+    emailInput.classList.toggle("is-valid", email && isValidEmail);
+    emailInput.classList.toggle("is-invalid", email && !isValidEmail);
+  }, [email, emailInput, emailRegex, hasInteractedEmail]);
 
   useEffect(() => {
-    //Phone Validations
     if (!hasInteractedPhone) return;
-    if (
-      !phoneRegex.test(phone) ||
-      (phone.length < 10 && hasInteractedPhone) ||
-      (phone === "" && hasInteractedPhone)
-    ) {
-      phoneInput?.classList.add("is-invalid");
-      phoneInput?.classList.remove("is-valid");
-    } else if (phoneRegex.test(phone) && phone.length >= 10) {
+
+    const isValidPhone = phoneRegex.test(phone) && phone.length >= 10;
+
+    if (isValidPhone) {
       phoneInput?.classList.add("is-valid");
       phoneInput?.classList.remove("is-invalid");
+    } else {
+      phoneInput?.classList.add("is-invalid");
+      phoneInput?.classList.remove("is-valid");
     }
   }, [hasInteractedPhone, phone, phoneInput?.classList, phoneRegex]);
 
   useEffect(() => {
+    //Submit Button Validation
     if (
       nameInput?.classList.contains("is-valid") &&
       emailInput?.classList.contains("is-valid") &&
@@ -102,16 +94,13 @@ export default function AddClientModal() {
     setName("");
     setEmail("");
     setPhone("");
-    setDoNotSumbit(true);
     setHasInteractedEmail(false);
     setHasInteractedName(false);
     setHasInteractedPhone(false);
-    nameInput?.classList.remove("is-valid");
-    nameInput?.classList.remove("is-invalid");
-    emailInput?.classList.remove("is-valid");
-    emailInput?.classList.remove("is-invalid");
-    phoneInput?.classList.remove("is-valid");
-    phoneInput?.classList.remove("is-invalid");
+    nameInput?.classList.remove("is-valid", "is-invalid");
+    emailInput?.classList.remove("is-valid", "is-invalid");
+    phoneInput?.classList.remove("is-valid", "is-invalid");
+    setDoNotSumbit(true);
   };
 
   const onSubmit = (e) => {
@@ -221,7 +210,7 @@ export default function AddClientModal() {
                 <div className="mb-3">
                   <label className="form-label">Phone</label>
                   <input
-                    type="number"
+                    type="text"
                     className={`form-control client-input ${
                       hasInteractedPhone && phone
                         ? phoneRegex.test(phone)
