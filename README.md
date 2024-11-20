@@ -6,4 +6,3 @@ Built following the [Traversty Media Tutorial](https://www.youtube.com/watch?v=B
 Edit Project Validation
 Change documents to refs
 Fix extra spinner
-
