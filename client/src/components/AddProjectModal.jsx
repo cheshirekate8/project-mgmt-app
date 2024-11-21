@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaList } from "react-icons/fa";
 import { useMutation, useQuery } from "@apollo/client";
 import { GET_PROJECTS } from "../queries/projectQueries";
@@ -32,9 +32,10 @@ export default function AddProjectModal() {
     },
   });
 
-  const nameInput = document.getElementById("projectName");
-  const descriptionInput = document.getElementById("description");
-  const clientIdInput = document.getElementById("clientId");
+  const nameInput = useRef(null);
+  const descriptionInput = useRef(null);
+  const clientIdInput = useRef(null);
+  const closeBtnRef = useRef(null);
 
   // Get Clients for select
   const { loading, error, data } = useQuery(GET_CLIENTS);
@@ -46,13 +47,13 @@ export default function AddProjectModal() {
       (projectName && projectName.length < 2) ||
       (hasInteractedName && projectName === "")
     ) {
-      nameInput?.classList.add("is-invalid");
-      nameInput?.classList.remove("is-valid");
+      nameInput?.current.classList.add("is-invalid");
+      nameInput?.current.classList.remove("is-valid");
     } else if (projectName && projectName.length >= 2) {
-      nameInput?.classList.add("is-valid");
-      nameInput?.classList.remove("is-invalid");
+      nameInput?.current.classList.add("is-valid");
+      nameInput?.current.classList.remove("is-invalid");
     }
-  }, [hasInteractedName, projectName, nameInput, nameInput?.classList]);
+  }, [hasInteractedName, projectName]);
 
   useEffect(() => {
     //Description Validations
@@ -61,49 +62,37 @@ export default function AddProjectModal() {
       (description && description.length < 20) ||
       (hasInteractedName && description === "")
     ) {
-      descriptionInput?.classList.add("is-invalid");
-      descriptionInput?.classList.remove("is-valid");
+      descriptionInput?.current.classList.add("is-invalid");
+      descriptionInput?.current.classList.remove("is-valid");
     } else if (description && description.length >= 20) {
-      descriptionInput?.classList.add("is-valid");
-      descriptionInput?.classList.remove("is-invalid");
+      descriptionInput?.current.classList.add("is-valid");
+      descriptionInput?.current.classList.remove("is-invalid");
     }
-  }, [
-    description,
-    hasInteractedDescription,
-    hasInteractedName,
-    descriptionInput?.classList,
-  ]);
+  }, [description, hasInteractedDescription, hasInteractedName]);
 
   useEffect(() => {
     //clientId Validation
     if (!hasInteractedClient) return;
     if (clientId === "") {
-      clientIdInput?.classList.add("is-invalid");
-      clientIdInput?.classList.remove("is-valid");
+      clientIdInput?.current.classList.add("is-invalid");
+      clientIdInput?.current.classList.remove("is-valid");
     } else {
-      clientIdInput?.classList.add("is-valid");
-      clientIdInput?.classList.remove("is-invalid");
+      clientIdInput?.current.classList.add("is-valid");
+      clientIdInput?.current.classList.remove("is-invalid");
     }
-  }, [clientId, clientIdInput?.classList, hasInteractedClient]);
+  }, [clientId, hasInteractedClient]);
 
   useEffect(() => {
     if (
-      nameInput?.classList.contains("is-valid") &&
-      descriptionInput?.classList.contains("is-valid") &&
-      clientIdInput?.classList.contains("is-valid")
+      nameInput?.current?.classList.contains("is-valid") &&
+      descriptionInput?.current?.classList.contains("is-valid") &&
+      clientIdInput?.current?.classList.contains("is-valid")
     ) {
       setDoNotSumbit(false);
     } else {
       setDoNotSumbit(true);
     }
-  }, [
-    projectName,
-    description,
-    clientId,
-    clientIdInput?.classList,
-    descriptionInput?.classList,
-    nameInput?.classList,
-  ]);
+  }, [projectName, description, clientId]);
 
   const clearForm = () => {
     setProjectName("");
@@ -113,9 +102,9 @@ export default function AddProjectModal() {
     setHasInteractedName(false);
     setHasInteractedDescription(false);
     setHasInteractedClient(false);
-    nameInput?.classList.remove("is-valid", "is-invalid");
-    descriptionInput?.classList.remove("is-valid", "is-invalid");
-    clientIdInput?.classList.remove("is-valid", "is-invalid");
+    nameInput?.current.classList.remove("is-valid", "is-invalid");
+    descriptionInput?.current.classList.remove("is-valid", "is-invalid");
+    clientIdInput?.current.classList.remove("is-valid", "is-invalid");
     setDoNotSumbit(true);
   };
 
@@ -126,6 +115,7 @@ export default function AddProjectModal() {
     }
     addProject(projectName, description, clientId, status);
     clearForm();
+    closeBtnRef.current.click();
   };
 
   if (loading) return null;
@@ -166,6 +156,7 @@ export default function AddProjectModal() {
                     className="btn-close"
                     data-bs-dismiss="modal"
                     aria-label="Close"
+                    ref={closeBtnRef}
                   ></button>
                 </div>
                 <div className="modal-body">
@@ -189,6 +180,7 @@ export default function AddProjectModal() {
                           setProjectName(e.target.value);
                         }}
                         onBlur={() => setHasInteractedName(true)}
+                        ref={nameInput}
                         required
                       ></input>
                       <div className="valid-feedback">Looks good!</div>
@@ -217,6 +209,8 @@ export default function AddProjectModal() {
                           setDescription(e.target.value);
                         }}
                         onBlur={() => setHasInteractedDescription(true)}
+                        ref={descriptionInput}
+                        required
                       ></textarea>
                       <div className="valid-feedback">Looks good!</div>
                       <div className="invalid-feedback">
@@ -240,12 +234,15 @@ export default function AddProjectModal() {
                       <label className="form-label">Client</label>
                       <select
                         id="clientId"
+                        className="form-select"
                         value={clientId}
                         onChange={(e) => {
                           setClientId(e.target.value);
                           setHasInteractedClient(true);
                         }}
                         onBlur={() => setHasInteractedClient(true)}
+                        ref={clientIdInput}
+                        required
                       >
                         <option value="" disabled>
                           Select Client

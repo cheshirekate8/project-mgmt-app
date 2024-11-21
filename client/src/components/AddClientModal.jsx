@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { FaUser } from "react-icons/fa";
 import { useMutation } from "@apollo/client";
 import { ADD_CLIENT } from "../mutations/clientMutations";
@@ -33,27 +33,28 @@ export default function AddClientModal() {
     },
   });
 
-  const nameInput = document.getElementById("name");
-  const phoneInput = document.getElementById("phone");
-  const emailInput = document.getElementById("email");
+  const nameInput = useRef(null);
+  const emailInput = useRef(null);
+  const phoneInput = useRef(null);
+  const closeBtn = useRef(null);
 
   useEffect(() => {
     if (!hasInteractedName) return;
 
     const isValid = name && name.length >= 2;
 
-    nameInput?.classList.toggle("is-valid", isValid);
-    nameInput?.classList.toggle("is-invalid", !isValid);
-  }, [hasInteractedName, name, nameInput]);
+    nameInput?.current.classList.toggle("is-valid", isValid);
+    nameInput?.current.classList.toggle("is-invalid", !isValid);
+  }, [hasInteractedName, name]);
 
   useEffect(() => {
-    if (!hasInteractedEmail || !emailInput) return;
+    if (!hasInteractedEmail) return;
 
     const isValidEmail = emailRegex.test(email);
 
-    emailInput.classList.toggle("is-valid", email && isValidEmail);
-    emailInput.classList.toggle("is-invalid", email && !isValidEmail);
-  }, [email, emailInput, emailRegex, hasInteractedEmail]);
+    emailInput?.current.classList.toggle("is-valid", email && isValidEmail);
+    emailInput?.current.classList.toggle("is-invalid", email && !isValidEmail);
+  }, [email, emailRegex, hasInteractedEmail]);
 
   useEffect(() => {
     if (!hasInteractedPhone) return;
@@ -61,34 +62,26 @@ export default function AddClientModal() {
     const isValidPhone = phoneRegex.test(phone) && phone.length >= 10;
 
     if (isValidPhone) {
-      phoneInput?.classList.add("is-valid");
-      phoneInput?.classList.remove("is-invalid");
+      phoneInput?.current.classList.add("is-valid");
+      phoneInput?.current.classList.remove("is-invalid");
     } else {
-      phoneInput?.classList.add("is-invalid");
-      phoneInput?.classList.remove("is-valid");
+      phoneInput?.current.classList.add("is-invalid");
+      phoneInput?.current.classList.remove("is-valid");
     }
-  }, [hasInteractedPhone, phone, phoneInput?.classList, phoneRegex]);
+  }, [hasInteractedPhone, phone, phoneRegex]);
 
   useEffect(() => {
     //Submit Button Validation
     if (
-      nameInput?.classList.contains("is-valid") &&
-      emailInput?.classList.contains("is-valid") &&
-      phoneInput?.classList.contains("is-valid")
+      nameInput?.current.classList.contains("is-valid") &&
+      emailInput?.current.classList.contains("is-valid") &&
+      phoneInput?.current.classList.contains("is-valid")
     ) {
       setDoNotSumbit(false);
     } else {
       setDoNotSumbit(true);
     }
-  }, [
-    doNotSubmit,
-    name,
-    email,
-    phone,
-    nameInput?.classList,
-    emailInput?.classList,
-    phoneInput?.classList,
-  ]);
+  }, [name, email, phone]);
 
   const clearForm = () => {
     setName("");
@@ -97,9 +90,9 @@ export default function AddClientModal() {
     setHasInteractedEmail(false);
     setHasInteractedName(false);
     setHasInteractedPhone(false);
-    nameInput?.classList.remove("is-valid", "is-invalid");
-    emailInput?.classList.remove("is-valid", "is-invalid");
-    phoneInput?.classList.remove("is-valid", "is-invalid");
+    nameInput?.current.classList.remove("is-valid", "is-invalid");
+    emailInput?.current.classList.remove("is-valid", "is-invalid");
+    phoneInput?.current.classList.remove("is-valid", "is-invalid");
     setDoNotSumbit(true);
   };
 
@@ -113,8 +106,7 @@ export default function AddClientModal() {
     addClient(name, email, phone);
     clearForm();
 
-    const closeBtn = document.getElementById("btn-close");
-    closeBtn.click();
+    closeBtn.current.click();
   };
 
   return (
@@ -151,6 +143,7 @@ export default function AddClientModal() {
                 id="btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
+                ref={closeBtn}
               ></button>
             </div>
             <div className="modal-body">
@@ -174,6 +167,7 @@ export default function AddClientModal() {
                       setName(e.target.value);
                     }}
                     onBlur={() => setHasInteractedName(true)}
+                    ref={nameInput}
                     required
                   ></input>
                   <div className="valid-feedback">Looks good!</div>
@@ -200,6 +194,7 @@ export default function AddClientModal() {
                       setEmail(e.target.value);
                     }}
                     onBlur={(e) => setHasInteractedEmail(true)}
+                    ref={emailInput}
                     required
                   ></input>
                   <div className="valid-feedback">Looks good!</div>
@@ -226,6 +221,7 @@ export default function AddClientModal() {
                       setPhone(e.target.value);
                     }}
                     onBlur={(e) => setHasInteractedPhone(true)}
+                    ref={phoneInput}
                     required
                   ></input>
                   <div className="valid-feedback">Looks good!</div>

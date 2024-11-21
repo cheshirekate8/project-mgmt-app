@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@apollo/client";
 import { GET_PROJECT } from "../queries/projectQueries";
 import { UPDATE_PROJECT } from "../mutations/projectMutations";
@@ -24,10 +24,6 @@ export default function EditProjectForm({ project }) {
   const [status, setStatus] = useState(enumTranslator(project.status));
   const [doNotSubmit, setDoNotSumbit] = useState(true);
 
-  /*
-  TODO: Fix reset button/enum option
-  */
-
   const [updateProject] = useMutation(UPDATE_PROJECT, {
     variables: {
       id: project.id,
@@ -38,20 +34,20 @@ export default function EditProjectForm({ project }) {
     refetchQueries: [{ query: GET_PROJECT, variables: { id: project.id } }],
   });
 
-  const nameInput = document.getElementById("name");
-  const descriptionInput = document.getElementById("description");
+  const nameInput = useRef(null);
+  const descriptionInput = useRef(null);
 
   useEffect(() => {
     //Name Validations
     if (!hasInteractedName) return;
     if ((name && name.length < 2) || (hasInteractedName && name === "")) {
-      nameInput?.classList.add("is-invalid");
-      nameInput?.classList.remove("is-valid");
+      nameInput?.current.classList.add("is-invalid");
+      nameInput?.current.classList.remove("is-valid");
     } else if (name && name.length >= 2) {
-      nameInput?.classList.add("is-valid");
-      nameInput?.classList.remove("is-invalid");
+      nameInput?.current.classList.add("is-valid");
+      nameInput?.current.classList.remove("is-invalid");
     }
-  }, [hasInteractedName, name, nameInput, nameInput?.classList]);
+  }, [hasInteractedName, name]);
 
   useEffect(() => {
     //Description Validations
@@ -60,46 +56,39 @@ export default function EditProjectForm({ project }) {
       (description && description.length < 20) ||
       (hasInteractedName && description === "")
     ) {
-      descriptionInput?.classList.add("is-invalid");
-      descriptionInput?.classList.remove("is-valid");
+      descriptionInput?.current.classList.add("is-invalid");
+      descriptionInput?.current.classList.remove("is-valid");
     } else if (description && description.length >= 20) {
-      descriptionInput?.classList.add("is-valid");
-      descriptionInput?.classList.remove("is-invalid");
+      descriptionInput?.current.classList.add("is-valid");
+      descriptionInput?.current.classList.remove("is-invalid");
     }
-  }, [
-    description,
-    hasInteractedDescription,
-    hasInteractedName,
-    descriptionInput?.classList,
-  ]);
+  }, [description, hasInteractedDescription, hasInteractedName]);
 
   useEffect(() => {
     if (
-      (nameInput?.classList.contains("is-valid") &&
-        descriptionInput?.classList.contains("is-valid")) ||
+      (nameInput?.current.classList.contains("is-valid") &&
+        descriptionInput?.current.classList.contains("is-valid")) ||
       (!hasInteractedName &&
-        descriptionInput?.classList.contains("is-valid")) ||
-      (nameInput?.classList.contains("is-valid") && !hasInteractedDescription)
+        descriptionInput?.current.classList.contains("is-valid")) ||
+      (nameInput?.current.classList.contains("is-valid") && !hasInteractedDescription)
     ) {
       setDoNotSumbit(false);
     } else {
       setDoNotSumbit(true);
     }
-  }, [
-    descriptionInput?.classList,
-    hasInteractedDescription,
-    hasInteractedName,
-    nameInput?.classList,
-  ]);
+  }, [hasInteractedDescription, hasInteractedName]);
 
   const resetForm = (nameVar, descVar, statusVar) => {
+    console.log("STATUS", project.status)
+    console.log("TRANSLATED STATUS", enumTranslator(project.status))
+
     setName(nameVar);
     setDescription(descVar);
     setStatus(enumTranslator(statusVar));
     setHasInteractedName(false);
     setHasInteractedDescription(false);
-    nameInput?.classList.remove("is-valid", "is-invalid");
-    descriptionInput?.classList.remove("is-valid", "is-invalid");
+    nameInput?.current.classList.remove("is-valid", "is-invalid");
+    descriptionInput?.current.classList.remove("is-valid", "is-invalid");
     setDoNotSumbit(true);
   };
 
@@ -136,6 +125,7 @@ export default function EditProjectForm({ project }) {
               setName(e.target.value);
             }}
             onBlur={() => setHasInteractedName(true)}
+            ref={nameInput}
           ></input>
           <div className="valid-feedback">Looks good!</div>
           <div className="invalid-feedback">
@@ -160,6 +150,7 @@ export default function EditProjectForm({ project }) {
               setDescription(e.target.value);
             }}
             onBlur={() => setHasInteractedDescription(true)}
+            ref={descriptionInput}
           ></textarea>
           <div className="valid-feedback">Looks good!</div>
           <div className="invalid-feedback">
@@ -198,9 +189,9 @@ export default function EditProjectForm({ project }) {
           >
             Submit
           </button>
-          {/* <button type="button" className="btn btn-primary" onClick={() => resetForm(project.name, project.description, enumTranslator(project.status))}>
+          <button type="button" className="btn btn-primary" onClick={() => {resetForm(project.name, project.description, project.status)}}>
             Reset
-          </button> */}
+          </button>
         </div>
       </form>
     </div>
